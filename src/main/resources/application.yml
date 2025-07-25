@@ -29,3 +29,8 @@ exchange-rate:
       u4: KRW
       u8: down
       u2: 1
+
+logging:
+  level:
+    org.springframework.messaging: DEBUG
+    org.springframework.web: DEBUG
