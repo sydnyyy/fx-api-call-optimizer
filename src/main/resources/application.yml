@@ -1,17 +1,6 @@
 spring:
   application:
     name: exchange-rate-api
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/ex_db
-    username: root
 
 exchange-rate:
   naver:
