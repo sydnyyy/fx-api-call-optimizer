@@ -1,7 +1,7 @@
-package com.exchangerateapi.exchangerate.naver;
+package com.exchangerateapi.exchangerate.service.naver;
 
 import com.exchangerateapi.global.enums.Currency;
-import com.exchangerateapi.exchangerate.naver.dto.ExchangeRateNaverResponseDto;
+import com.exchangerateapi.exchangerate.service.naver.dto.ExchangeRateNaverResponseDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;

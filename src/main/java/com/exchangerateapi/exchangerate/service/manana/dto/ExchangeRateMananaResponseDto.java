@@ -1,4 +1,4 @@
-package com.exchangerateapi.exchangerate.manana.dto;
+package com.exchangerateapi.exchangerate.service.manana.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

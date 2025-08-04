@@ -1,6 +1,6 @@
 package com.exchangerateapi.exchangerate.api;
 
-import com.exchangerateapi.exchangerate.ExchangeRateService;
+import com.exchangerateapi.exchangerate.service.ExchangeRateService;
 import com.exchangerateapi.global.enums.Currency;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +27,5 @@ public class ExchangeRateController {
         BigDecimal exchangeRate = exchangeRateService.getExchangeRate(baseCurrency, quoteCurrency);
         return ResponseEntity.ok(Map.of(
                 baseCurrency + "/" + quoteCurrency, exchangeRate));
-
     }
 }

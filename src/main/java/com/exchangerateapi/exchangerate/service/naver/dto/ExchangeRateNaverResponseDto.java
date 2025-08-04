@@ -1,4 +1,4 @@
-package com.exchangerateapi.exchangerate.naver.dto;
+package com.exchangerateapi.exchangerate.service.naver.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

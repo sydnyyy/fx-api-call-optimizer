@@ -1,4 +1,4 @@
-package com.exchangerateapi.exchangerate.google;
+package com.exchangerateapi.exchangerate.service.google;
 
 import com.exchangerateapi.global.enums.Currency;
 import lombok.extern.slf4j.Slf4j;

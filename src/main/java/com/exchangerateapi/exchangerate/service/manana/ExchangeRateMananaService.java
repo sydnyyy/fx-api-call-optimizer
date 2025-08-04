@@ -1,7 +1,7 @@
-package com.exchangerateapi.exchangerate.manana;
+package com.exchangerateapi.exchangerate.service.manana;
 
 import com.exchangerateapi.global.enums.Currency;
-import com.exchangerateapi.exchangerate.manana.dto.ExchangeRateMananaResponseDto;
+import com.exchangerateapi.exchangerate.service.manana.dto.ExchangeRateMananaResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

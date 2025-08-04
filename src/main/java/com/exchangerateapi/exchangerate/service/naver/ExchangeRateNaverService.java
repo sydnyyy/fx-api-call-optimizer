@@ -1,7 +1,7 @@
-package com.exchangerateapi.exchangerate.naver;
+package com.exchangerateapi.exchangerate.service.naver;
 
 import com.exchangerateapi.global.enums.Currency;
-import com.exchangerateapi.exchangerate.naver.dto.ExchangeRateNaverResponseDto;
+import com.exchangerateapi.exchangerate.service.naver.dto.ExchangeRateNaverResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
