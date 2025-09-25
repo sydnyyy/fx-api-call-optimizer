@@ -21,7 +21,12 @@
   - Object.wait: synchronized 블록 사용 시 내부에서 모니터 락 자동 사용하므로 세심한 제어 불가능
   - ✔️ CompletableFuture.get(orTimeout): 락 없이 대기 가능 & 대기 상태까지 CPU 선점하지 않음
 
-### 단계적 호출 및 CompletableFuture 기반 Open API 병렬 호출
+### 설계 결론
+- 다수 서블릿 스레드가 대기 상태로 전환하는 것이 빈번히 발생 → Context Switching 비용 증가
+- 외부 API 응답 timeout 잘못 설정 시 다수 스레드 대기 상태 유지되어 Tomcat 신규 요청 차단으로 이어질 수 있음
+- 실시간 환율 제공보다 일정 주기로 캐싱되는 방식이 현실적인 대안임을 파악
+
+## 단계적 호출 및 CompletableFuture 기반 Open API 병렬 호출
 - 호출 제한에 대비하여 단계적 호출 설계
 - 1차 호출 (sync): [naver Open API](https://m.search.naver.com/p/csearch/content/qapirender.nhn?key=calculator&pkid=141&q=%ED%99%98%EC%9C%A8&where=m&u1=keb&u6=standardUnit&u7=0&u3=USD&u4=KRW&u8=down&u2=1)
 - 2차 호출 (async): [manana Open API](https://api.manana.kr/exchange) & [구글 web scraping](https://www.google.com/finance/quote/USD-KRW) 병렬 수행 
