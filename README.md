@@ -13,6 +13,14 @@
 - 동일 시점에 여러 요청이 Open API로 USD/KRW 환율 요청 -> 같은 데이터를 가져올 가능성 높음
 - Open API 다수 호출 시 호출 제한 걸려 Forbidden 에러 응답받으면, 일정 시간 동안 실시간 환율 데이터 응답 불가 -> 호출 제한 필요
 
+### Follower 스레드 대기 방식
+- ReentrantLock을 획득하지 못한 스레드는 로컬 캐시 업데이트를 기다려야 함
+- 로컬 캐시 업데이트까지 대기 방식
+  - Spin Lock: 대기 시간 예측이 불가능한 외부 API 호출 로직과 연관되어 불필요한 CPU 선점으로 이어질 수 있음
+  - Condition.await: Follower 스레드는 공용 데이터 읽기 작업만 수행해 Lock 획득하면서까지 대기할 필요 없음
+  - Object.wait: synchronized 블록 사용 시 내부에서 모니터 락 자동 사용하므로 세심한 제어 불가능
+  - ✔️ CompletableFuture.get(orTimeout): 락 없이 대기 가능 & 대기 상태까지 CPU 선점하지 않음
+
 ### 단계적 호출 및 CompletableFuture 기반 Open API 병렬 호출
 - 호출 제한에 대비하여 단계적 호출 설계
 - 1차 호출 (sync): [naver Open API](https://m.search.naver.com/p/csearch/content/qapirender.nhn?key=calculator&pkid=141&q=%ED%99%98%EC%9C%A8&where=m&u1=keb&u6=standardUnit&u7=0&u3=USD&u4=KRW&u8=down&u2=1)
