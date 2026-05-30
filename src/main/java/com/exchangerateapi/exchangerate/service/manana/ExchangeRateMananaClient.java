@@ -4,7 +4,7 @@ import com.exchangerateapi.global.enums.Currency;
 import com.exchangerateapi.exchangerate.service.manana.dto.ExchangeRateMananaResponseDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -14,9 +14,9 @@ import java.util.List;
 )
 public interface ExchangeRateMananaClient {
 
-	@GetMapping("/rate.json")
+	@GetMapping("/rate/{quote}/{base}.json")
 	List<ExchangeRateMananaResponseDto> getExchangeRate(
-		@RequestParam("base") Currency base,
-		@RequestParam("code") Currency code
+			@PathVariable("quote") Currency quote,
+			@PathVariable("base") Currency base
 	);
 }
