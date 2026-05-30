@@ -3,7 +3,6 @@ package com.exchangerateapi.exchangerate.service.manana;
 import com.exchangerateapi.global.enums.Currency;
 import com.exchangerateapi.exchangerate.service.manana.dto.ExchangeRateMananaResponseDto;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -12,13 +11,17 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ExchangeRateMananaService {
 
 	private final ExchangeRateMananaClient exchangeRateMananaClient;
 
 	public BigDecimal getExchangeRate(Currency baseCurrency, Currency quoteCurrency) {
 		List<ExchangeRateMananaResponseDto> result = exchangeRateMananaClient.getExchangeRate(quoteCurrency, baseCurrency);
-		return result.get(0).rate().setScale(2, RoundingMode.CEILING);
+		BigDecimal rate = result.getFirst().rate();
+
+		if (rate.compareTo(BigDecimal.ONE) >= 0) {
+			return rate.setScale(3, RoundingMode.CEILING);
+		}
+		return rate.setScale(7, RoundingMode.CEILING);
 	}
 }
