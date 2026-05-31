@@ -77,7 +77,6 @@ public class ExchangeRateService {
 			throw e.getCause() instanceof CustomException
 					? (CustomException) e.getCause() : new CustomException(ErrorCode.EXCHANGE_RATE_FETCH_FAIL);
 		} finally {
-			currencyLocks.remove(currencyCode);
 			currencyFutures.remove(currencyCode);
 		}
 	}
