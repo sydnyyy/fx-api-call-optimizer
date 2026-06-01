@@ -77,6 +77,10 @@ public class ExchangeRateService {
 			throw e.getCause() instanceof CustomException
 					? (CustomException) e.getCause() : new CustomException(ErrorCode.EXCHANGE_RATE_FETCH_FAIL);
 		} finally {
+			/*
+				Follower는 이미 sharedFuture 객체의 참조 확보
+				Leader가 작업을 완료하고 컬렉션에서 객체를 제거해도, Follower는 참조로 객체 접근 가능
+			 */
 			currencyFutures.remove(currencyCode);
 		}
 	}
