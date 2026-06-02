@@ -10,17 +10,14 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ExchangeRateService {
 
-	private static final long TRY_LOCK_TIMEOUT_MS = 1;
 	private static final long FUTURE_TIMEOUT_MS = 10000;
 
-	private final Map<String, ReentrantLock> currencyLocks = new ConcurrentHashMap<>();
 	private final Map<String, CompletableFuture<BigDecimal>> currencyFutures = new ConcurrentHashMap<>();
 
 	private final ExchangeRateProvider exchangeRateProvider;
@@ -35,62 +32,44 @@ public class ExchangeRateService {
 				.orElseGet(() -> handleCacheMiss(baseCurrency, quoteCurrency));
 	}
 
-	private BigDecimal handleCacheMiss(Currency baseCurrency, Currency quoteCurrency) {
+	public BigDecimal handleCacheMiss(Currency baseCurrency, Currency quoteCurrency) {
 		String currencyCode = getCurrencyCode(baseCurrency, quoteCurrency);
-		ReentrantLock lock = currencyLocks.computeIfAbsent(currencyCode, k -> new ReentrantLock());
 
-		CompletableFuture<BigDecimal> sharedFuture = currencyFutures.computeIfAbsent(currencyCode, k -> new CompletableFuture<>());
+		CompletableFuture<BigDecimal> future = currencyFutures.computeIfAbsent(
+				currencyCode, k -> createExchangeRateFuture(baseCurrency, quoteCurrency)
+		);
 
-		try {
-			if (lock.tryLock(TRY_LOCK_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-				return executeFetchAndCache(baseCurrency, quoteCurrency, sharedFuture);
-			} else {
-				return awaitFetchCompletion(currencyCode, sharedFuture);
-			}
-		} catch (InterruptedException e) {
-			log.error("🔴 {}/{} ReentrantLock 획득 중 스레드 인터럽트 발생", baseCurrency, quoteCurrency, e);
-			Thread.currentThread().interrupt();
-			sharedFuture.completeExceptionally(new CustomException(ErrorCode.EXCHANGE_RATE_FETCH_FAIL));
-			throw new CustomException(ErrorCode.EXCHANGE_RATE_FETCH_FAIL);
-		} finally {
-			if (lock.isHeldByCurrentThread()) {
-				lock.unlock();
-			}
-		}
+		return joinWithTimeout(future);
 	}
 
-	private BigDecimal executeFetchAndCache(Currency baseCurrency, Currency quoteCurrency, CompletableFuture<BigDecimal> sharedFuture) {
+	// 테스트를 위해 public 설정함
+	 public CompletableFuture<BigDecimal> createExchangeRateFuture(Currency baseCurrency, Currency quoteCurrency) {
 		String currencyCode = getCurrencyCode(baseCurrency, quoteCurrency);
-		try {
-			return exchangeRateProvider.fetchExchangeRate(baseCurrency, quoteCurrency)
-					.whenComplete((result, throwable) -> {
-						if (throwable != null) {
-							log.error("[Leader 환율 조회 실패] currencyCode={}", currencyCode, throwable.getCause());
-							sharedFuture.completeExceptionally(throwable.getCause());
+
+		return exchangeRateProvider.fetchExchangeRate(baseCurrency, quoteCurrency)
+				.toCompletableFuture()
+				.whenComplete((r, ex) -> {
+					try {
+						if (ex != null) {
+							log.error("[Leader 환율 조회 실패] currencyCode={}", currencyCode, ex.getCause());
 						} else {
-							exchangeRateCache.put(currencyCode, result);
-							sharedFuture.complete(result);
-							log.info("[Leader 환율 조회 성공] currencyCode={}, exchangeRate={} 환율 캐시 업데이트 완료", currencyCode, result);
+							exchangeRateCache.put(currencyCode, r);
+							log.info("[Leader 환율 조회 성공] currencyCode={}, exchangeRate={} 환율 캐시 업데이트 완료", currencyCode, r);
 						}
-					}).join();
+					} finally {
+						currencyFutures.remove(currencyCode);
+					}
+				});
+	}
+
+	// 테스트를 위해 public 설정함
+	public BigDecimal joinWithTimeout(CompletableFuture<BigDecimal> future) {
+		try {
+			return future.orTimeout(FUTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS).join();
 		} catch (CompletionException e) {
 			throw e.getCause() instanceof CustomException
-					? (CustomException) e.getCause() : new CustomException(ErrorCode.EXCHANGE_RATE_FETCH_FAIL);
-		} finally {
-			/*
-				Follower는 이미 sharedFuture 객체의 참조 확보
-				Leader가 작업을 완료하고 컬렉션에서 객체를 제거해도, Follower는 참조로 객체 접근 가능
-			 */
-			currencyFutures.remove(currencyCode);
-		}
-	}
-
-	private BigDecimal awaitFetchCompletion(String currencyCode, CompletableFuture<BigDecimal> sharedFuture) {
-		try {
-			return sharedFuture.orTimeout(FUTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS).join();
-		} catch (Exception e) {
-			log.error("[Follower 환율 조회 실패] currencyCode={} 환율 조회 대기 중 오류 발생", currencyCode, e);
-			throw new CustomException(ErrorCode.EXCHANGE_RATE_FETCH_FAIL);
+					? (CustomException) e.getCause()
+					: new CustomException(ErrorCode.EXCHANGE_RATE_FETCH_FAIL);
 		}
 	}
 
