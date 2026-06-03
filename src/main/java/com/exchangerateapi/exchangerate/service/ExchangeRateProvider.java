@@ -23,17 +23,15 @@ public class ExchangeRateProvider {
     private final ExchangeRateMananaService mananaService;
     private final ExchangeRateGoogleFinanceScraper googleFinanceScraper;
 
-    public CompletableFuture<BigDecimal> fetchExchangeRate(Currency baseCurrency, Currency quoteCurrency) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                BigDecimal exchangeRate = naverService.getExchangeRate(baseCurrency, quoteCurrency);
-                log.info("[환율 1차 조회 성공] currencyCode={}/{}, exchangeRate={}", baseCurrency, quoteCurrency, exchangeRate);
-                return exchangeRate;
-            } catch (Exception e) {
-                log.warn("[환율 1차 조회 실패] Fallback 로직 시작. 원인={}", e.getMessage());
-                return fetchFromFallbacks(baseCurrency, quoteCurrency).join();
-            }
-        });
+    public BigDecimal fetchExchangeRate(Currency baseCurrency, Currency quoteCurrency) {
+        try {
+            BigDecimal exchangeRate = naverService.getExchangeRate(baseCurrency, quoteCurrency);
+            log.info("[환율 1차 호출 성공] currencyCode={}/{}, exchangeRate={}", baseCurrency, quoteCurrency, exchangeRate);
+            return exchangeRate;
+        } catch (Exception e) {
+            log.warn("[환율 1차 호출 실패] Fallback 로직 시작. 원인={}", e.getMessage());
+            return fetchFromFallbacks(baseCurrency, quoteCurrency).join();
+        }
     }
 
     private CompletableFuture<BigDecimal> fetchFromFallbacks(Currency baseCurrency, Currency quoteCurrency) {
@@ -43,11 +41,11 @@ public class ExchangeRateProvider {
         return CompletableFuture.anyOf(mananaFuture, googleFuture)
                 .thenApply(result -> {
                             BigDecimal exchangeRate = (BigDecimal) result;
-                            log.info("[환율 2차 조회 성공] currencyCode={}/{}, exchangeRate={}", baseCurrency, quoteCurrency, exchangeRate);
+                            log.info("[환율 2차 호출 성공] currencyCode={}/{}, exchangeRate={}", baseCurrency, quoteCurrency, exchangeRate);
                             return exchangeRate;
                 })
                 .exceptionally(ex -> {
-                    log.error("[환율 1차 조회 실패] {}/{} 모든 Fallback API 호출 실패", baseCurrency, quoteCurrency, ex);
+                    log.error("[환율 호출 최종 실패] {}/{}", baseCurrency, quoteCurrency, ex);
                     throw new CompletionException(new CustomException(ErrorCode.EXCHANGE_RATE_FETCH_FAIL));
                 });
     }
